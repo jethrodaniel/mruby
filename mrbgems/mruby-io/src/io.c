@@ -621,6 +621,9 @@ mrb_io_reopen(mrb_state *mrb, mrb_value self)
   printf("\ncurr.fd: %i\n", (int)(curr_fptr->fd));
   printf("\nnew.fd: %i\n", (int)(new_fptr->fd));
 
+  close(curr_fptr->fd);
+  close(curr_fptr->fd2);
+
   curr_fptr->fd = new_fptr->fd;
   curr_fptr->fd2 = new_fptr->fd2;
 
