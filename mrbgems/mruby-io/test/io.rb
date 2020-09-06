@@ -645,3 +645,25 @@ assert('`cmd`') do
 end
 
 MRubyIOTestUtil.io_test_cleanup
+
+assert("IO.reopen changes file descriptor") do
+  tmp_file = "/tmp/testing_1_2_3"
+  f = File.open(tmp_file, "w")
+
+  assert_equal(1, $stdout.fileno, "stdout initially points to fd 1")
+
+  ret = $stdout.reopen(f)
+  # ret = IO.dup2(1, f.fileno)
+  # ret = $stdout.initialize_copy(f)
+
+  assert_equal(
+    f.fileno,
+    $stdout.fileno,
+    "stdout points to a different fd after IO#reopen"
+  )
+
+  f.close
+  File.delete(tmp_file)
+end
+
+

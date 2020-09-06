@@ -604,6 +604,30 @@ mrb_dup(mrb_state *mrb, int fd, mrb_bool *failed)
 }
 
 static mrb_value
+mrb_io_reopen(mrb_state *mrb, mrb_value self)
+{
+  mrb_value new = mrb_get_arg1(mrb);
+  struct mrb_io *curr_fptr;
+  struct mrb_io *new_fptr;
+
+  curr_fptr = io_get_open_fptr(mrb, self);
+  new_fptr = io_get_open_fptr(mrb, new);
+
+  if (curr_fptr == new_fptr)
+    return self;
+
+  DATA_TYPE(self) = &mrb_io_type;
+
+  printf("\ncurr.fd: %i\n", (int)(curr_fptr->fd));
+  printf("\nnew.fd: %i\n", (int)(new_fptr->fd));
+
+  curr_fptr->fd = new_fptr->fd;
+  curr_fptr->fd2 = new_fptr->fd2;
+
+  return self;
+}
+
+static mrb_value
 mrb_io_initialize_copy(mrb_state *mrb, mrb_value copy)
 {
   mrb_value orig = mrb_get_arg1(mrb);
@@ -1548,6 +1572,7 @@ mrb_init_io(mrb_state *mrb)
   mrb_define_method(mrb, io, "fileno",     mrb_io_fileno_m,   MRB_ARGS_NONE());
   mrb_define_method(mrb, io, "pread",      mrb_io_pread,      MRB_ARGS_ANY());    /* ruby 2.5 feature */
   mrb_define_method(mrb, io, "pwrite",     mrb_io_pwrite,     MRB_ARGS_ANY());    /* ruby 2.5 feature */
+  mrb_define_method(mrb, io, "reopen", mrb_io_reopen, MRB_ARGS_REQ(1));
 
   mrb_define_method(mrb, io, "_readchar",  mrb_io_readchar,   MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, io, "_bufread",   mrb_io_bufread,    MRB_ARGS_REQ(2));
