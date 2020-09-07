@@ -603,6 +603,8 @@ mrb_dup(mrb_state *mrb, int fd, mrb_bool *failed)
   return new_fd;
 }
 
+int dup3(int oldfd, int newfd, int flags);
+// https://github.com/ruby/ruby/blob/c12b2703bc05f8c7eaaace49253f63a5e0f28273/io.c#L7448-L7551
 static mrb_value
 mrb_io_reopen(mrb_state *mrb, mrb_value self)
 {
@@ -616,16 +618,40 @@ mrb_io_reopen(mrb_state *mrb, mrb_value self)
   if (curr_fptr == new_fptr)
     return self;
 
+  if (new_fptr->fd != -1)
+    close(new_fptr->fd);
+
   DATA_TYPE(self) = &mrb_io_type;
 
   printf("\ncurr.fd: %i\n", (int)(curr_fptr->fd));
-  printf("\nnew.fd: %i\n", (int)(new_fptr->fd));
+  /* printf("curr.fd2: %i\n", (int)(curr_fptr->fd2)); */
+  printf(" new.fd: %i\n", (int)(new_fptr->fd));
+  /* printf(" new.fd2: %i\n", (int)(new_fptr->fd2)); */
 
-  close(curr_fptr->fd);
-  close(curr_fptr->fd2);
+  /* mrb_fd_cloexec(mrb, new_fptr->fd); */
+  /* close(curr_fptr->fd2); */
+  dup2(curr_fptr->fd, new_fptr->fd);
+  /* dup3(curr_fptr->fd, new_fptr->fd, O_CLOEXEC); */
+
+  /* if (curr_fptr->fd <= 2) */
+    /* close(curr_fptr->fd); */
+
+  /* dup2(curr_fptr->fd2, new_fptr->fd2); */
+  mrb_fd_cloexec(mrb, curr_fptr->fd);
+  mrb_fd_cloexec(mrb, new_fptr->fd);
 
   curr_fptr->fd = new_fptr->fd;
   curr_fptr->fd2 = new_fptr->fd2;
+  curr_fptr->pid = new_fptr->pid;
+  curr_fptr->readable = new_fptr->readable;
+  curr_fptr->writable = new_fptr->writable;
+  curr_fptr->sync = new_fptr->sync;
+  curr_fptr->is_socket = new_fptr->is_socket;
+
+  printf("\ncurr.fd: %i\n", (int)(curr_fptr->fd));
+  /* printf("curr.fd2: %i\n", (int)(curr_fptr->fd2)); */
+  printf(" new.fd: %i\n", (int)(new_fptr->fd));
+  /* printf(" new.fd2: %i\n", (int)(new_fptr->fd2)); */
 
   return self;
 }
